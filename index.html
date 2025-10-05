@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Sopa de letras: La célula — Rondas + Ranking</title>
+    <title>Sopa de letras: La célula — Turnos por Equipo</title>
     <style>
       :root {
         --ok: #22c55e;
@@ -11,6 +11,8 @@
         --main: #0b8043;
         --pill: #16a34a;
         --ink: #134e4a;
+        --teamA: #3b82f6;
+        --teamB: #f59e0b;
       }
       * {
         box-sizing: border-box;
@@ -55,6 +57,33 @@
         padding: 6px 10px;
         font-weight: 700;
         color: var(--ink);
+      }
+      .badge.turn {
+        font-size: 18px;
+        padding: 10px 16px;
+        animation: pulse 2s ease-in-out infinite;
+        font-weight: 900;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          transform: scale(1);
+          box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+        }
+        50% {
+          transform: scale(1.08);
+          box-shadow: 0 0 20px 5px rgba(59, 130, 246, 0.4);
+        }
+      }
+      .badge.teamA {
+        background: #dbeafe;
+        border-color: #93c5fd;
+        color: #1e3a8a;
+      }
+      .badge.teamB {
+        background: #fed7aa;
+        border-color: #fdba74;
+        color: #78350f;
       }
       .btn {
         cursor: pointer;
@@ -207,38 +236,265 @@
         text-align: center;
         color: #475569;
       }
+      /* Modal de inicio */
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        backdrop-filter: blur(4px);
+      }
+      .modal {
+        background: white;
+        border-radius: 20px;
+        padding: 30px;
+        max-width: 500px;
+        width: 90%;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        animation: modalSlideIn 0.3s ease-out;
+      }
+      @keyframes modalSlideIn {
+        from {
+          transform: translateY(-50px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+      .modal h2 {
+        margin: 0 0 20px;
+        color: var(--main);
+        font-size: 28px;
+        text-align: center;
+      }
+      .modal-content {
+        margin-bottom: 20px;
+      }
+      .modal-section {
+        margin-bottom: 20px;
+        padding: 15px;
+        background: #f8fff9;
+        border-radius: 12px;
+        border: 2px solid #d9fbe2;
+      }
+      .modal-section h3 {
+        margin: 0 0 10px;
+        color: var(--ink);
+        font-size: 16px;
+      }
+      .modal-buttons {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+      }
+      .modal .btn {
+        flex: 1;
+        padding: 12px 20px;
+        font-size: 16px;
+      }
+      .hidden {
+        display: none;
+      }
+      /* Modal de resumen de turno */
+      .summary-modal {
+        text-align: center;
+      }
+      .summary-modal .stats-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+        margin: 20px 0;
+      }
+      .summary-modal .stat-box {
+        padding: 15px;
+        background: #f8fff9;
+        border-radius: 12px;
+        border: 2px solid #d9fbe2;
+      }
+      .summary-modal .stat-label {
+        font-size: 14px;
+        color: #64748b;
+        margin-bottom: 5px;
+      }
+      .summary-modal .stat-value {
+        font-size: 28px;
+        font-weight: 900;
+        color: var(--main);
+      }
+      #gameArea {
+        filter: blur(3px);
+        pointer-events: none;
+        user-select: none;
+      }
+      #gameArea.active {
+        filter: none;
+        pointer-events: auto;
+        user-select: auto;
+        transition: filter 0.3s ease;
+      }
+      #turnIndicator {
+        text-align: center;
+        font-size: 24px;
+        font-weight: 900;
+        padding: 20px;
+        border-radius: 16px;
+        margin-bottom: 16px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+      }
+      #turnIndicator.teamA {
+        background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+        color: #1e40af;
+        border: 4px solid #3b82f6;
+      }
+      #turnIndicator.teamB {
+        background: linear-gradient(135deg, #fed7aa, #fde68a);
+        color: #92400e;
+        border: 4px solid #f59e0b;
+      }
+      .score-panel {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+      .team-score {
+        padding: 16px;
+        border-radius: 12px;
+        text-align: center;
+        font-weight: 700;
+        transition: transform 0.2s;
+      }
+      .team-score:hover {
+        transform: translateY(-2px);
+      }
+      .team-score.teamA {
+        background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+        border: 3px solid #3b82f6;
+        color: #1e40af;
+        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+      }
+      .team-score.teamB {
+        background: linear-gradient(135deg, #fed7aa, #fde68a);
+        border: 3px solid #f59e0b;
+        color: #92400e;
+        box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+      }
+      .team-score.active {
+        animation: scoreGlow 1.5s ease-in-out infinite;
+      }
+      @keyframes scoreGlow {
+        0%, 100% { box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3); }
+        50% { box-shadow: 0 4px 20px rgba(59, 130, 246, 0.6); }
+      }
     </style>
   </head>
   <body>
-    <header>
-      <div class="wrap topbar">
-        <h1>🔬 La célula — Sopa interactiva (Rondas + Ranking)</h1>
-        <div class="stats">
-          <div class="badge">
-            🧩 Ronda: <span id="round">1</span>/<span id="roundsTotal">3</span>
+    <!-- Modal de inicio -->
+    <div id="startModal" class="modal-overlay">
+      <div class="modal">
+        <h2>🔬 Sopa de Letras: La Célula</h2>
+        <div class="modal-content">
+          <div class="modal-section">
+            <h3>⚙️ Configuración del Juego</h3>
+            <div class="row" style="margin-bottom: 10px;">
+              <label style="flex: 1;">
+                Equipo A: <input id="startNameA" type="text" value="Equipo A" style="width: 100%;">
+              </label>
+            </div>
+            <div class="row" style="margin-bottom: 10px;">
+              <label style="flex: 1;">
+                Equipo B: <input id="startNameB" type="text" value="Equipo B" style="width: 100%;">
+              </label>
+            </div>
+            <div class="row">
+              <label style="flex: 1;">
+                Minutos por turno:
+                <input id="startMins" type="number" min="1" max="15" value="3" style="width: 100%;">
+              </label>
+            </div>
           </div>
-          <div class="badge">⏱ Tiempo: <span id="time">03:00</span></div>
-          <div class="badge">
-            🎯 Aciertos: <span id="hits">0</span>/<span id="total">0</span>
+
+          <div class="modal-section">
+            <h3>🎮 ¿Quién empieza?</h3>
+            <div class="modal-buttons">
+              <button id="startWithA" class="btn" style="background: #3b82f6;">
+                Equipo A
+              </button>
+              <button id="startWithB" class="btn" style="background: #f59e0b;">
+                Equipo B
+              </button>
+            </div>
           </div>
-          <div class="badge">⭐ Puntos: <span id="score">0</span></div>
-          <button id="resetBtn" class="btn warn">Reiniciar ronda</button>
         </div>
       </div>
-    </header>
+    </div>
 
-    <div class="wrap game">
+    <!-- Modal de resumen de turno -->
+    <div id="summaryModal" class="modal-overlay hidden">
+      <div class="modal summary-modal">
+        <h2 id="summaryTitle">🎉 Turno Finalizado</h2>
+        <div class="modal-content">
+          <div class="modal-section">
+            <h3 id="summaryTeam">Equipo A</h3>
+            <div class="stats-grid">
+              <div class="stat-box">
+                <div class="stat-label">Palabras encontradas</div>
+                <div class="stat-value" id="summaryWords">0/15</div>
+              </div>
+              <div class="stat-box">
+                <div class="stat-label">Puntos obtenidos</div>
+                <div class="stat-value" id="summaryPoints">0</div>
+              </div>
+            </div>
+          </div>
+          <p style="color: #64748b; margin: 15px 0;">¡Ahora es el turno del otro equipo!</p>
+        </div>
+        <div class="modal-buttons">
+          <button id="summaryOk" class="btn">
+            Continuar ➡️
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="gameArea">
+      <header>
+        <div class="wrap topbar">
+          <h1>🔬 La célula — Sopa por Turnos</h1>
+          <div class="stats">
+            <div class="badge turn" id="currentTurn">🎯 Turno: Equipo A</div>
+            <div class="badge">⏱ Tiempo: <span id="time">03:00</span></div>
+            <div class="badge">
+              🎯 Encontradas: <span id="hits">0</span>/<span id="total">0</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div class="wrap game">
       <!-- GRID -->
       <div>
+        <div id="turnIndicator" class="teamA">
+          🎮 Turno de <span id="turnTeam">Equipo A</span>
+        </div>
         <div id="grid" aria-label="Sopa de letras"></div>
         <div class="panel">
           <div class="row">
             <button id="addTime" class="btn secondary">+30s</button>
             <button id="mute" class="btn">🔊 Sonido: ON</button>
-            <button id="finishRound" class="btn">🏁 Terminar Ronda</button>
+            <button id="skipTurn" class="btn warn">⏭ Cambiar Turno</button>
+            <button id="resetGame" class="btn danger">🔄 Reiniciar Todo</button>
           </div>
           <p class="tiny">
-            Tip: Selecciona <b>primera y última letra</b> en línea recta.
+            💡 <b>Tip:</b> Selecciona la <b>primera y última letra</b> de la palabra en línea recta (horizontal, vertical o diagonal).
           </p>
         </div>
       </div>
@@ -246,7 +502,7 @@
       <!-- LATERAL -->
       <aside class="side">
         <div class="panel">
-          <h3 class="title">👥 Equipos & Configuración</h3>
+          <h3 class="title">⚙️ Configuración</h3>
           <div class="row">
             <label
               >Equipo A: <input id="nameA" type="text" value="Equipo A"
@@ -257,35 +513,35 @@
           </div>
           <div class="row" style="margin-top: 6px">
             <label
-              >Rondas:
-              <input id="roundsInput" type="number" min="1" max="10" value="3"
-            /></label>
-            <label
-              >Minutos por ronda:
+              >Minutos por turno:
               <input id="minsInput" type="number" min="1" max="15" value="3"
             /></label>
             <button id="applyCfg" class="btn secondary">Aplicar</button>
           </div>
-          <div class="row" style="margin-top: 10px">
-            <div class="badge">
-              🏆 Rondas ganadas — <b id="lblA">A</b>: <span id="rwA">0</span>
+        </div>
+
+        <div class="panel">
+          <h3 class="title">🏆 Puntuación</h3>
+          <div class="score-panel">
+            <div class="team-score teamA" id="scoreCardA">
+              <div id="nameADisplay" style="font-size: 16px; font-weight: 800;">Equipo A</div>
+              <div style="font-size: 36px; margin-top: 8px; font-weight: 900;">
+                <span id="scoreA">0</span>
+              </div>
+              <div style="font-size: 14px; opacity: 0.8;">puntos</div>
             </div>
-            <div class="badge">
-              🏆 <b id="lblB">B</b>: <span id="rwB">0</span>
+            <div class="team-score teamB" id="scoreCardB">
+              <div id="nameBDisplay" style="font-size: 16px; font-weight: 800;">Equipo B</div>
+              <div style="font-size: 36px; margin-top: 8px; font-weight: 900;">
+                <span id="scoreB">0</span>
+              </div>
+              <div style="font-size: 14px; opacity: 0.8;">puntos</div>
             </div>
-          </div>
-          <div class="row" style="margin-top: 8px">
-            <button id="giveA" class="btn secondary">
-              +1 a <span id="btnA">A</span>
-            </button>
-            <button id="giveB" class="btn secondary">
-              +1 a <span id="btnB">B</span>
-            </button>
           </div>
         </div>
 
         <div class="panel">
-          <h3 class="title">👀 Palabras</h3>
+          <h3 class="title">👀 Palabras a Buscar</h3>
           <div id="words"></div>
         </div>
 
@@ -302,7 +558,6 @@
                 <th>Fecha</th>
                 <th>Ganador</th>
                 <th>Marcador</th>
-                <th>Puntos</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -314,19 +569,20 @@
       </aside>
     </div>
 
-    <footer>
-      © Recurso educativo — 6.º grado. Hecho para pizarras interactivas.
-    </footer>
+      <footer>
+        © Recurso educativo — 6.º grado. Hecho para pizarras interactivas.
+      </footer>
+    </div>
 
     <script>
-      /*************** Datos del tablero ***************/
-      const letters = [
+      /*************** Datos base del tablero ***************/
+      const baseLetters = [
         "T G S D C E L U L A V M G X",
         "A O P A R E D C E L U L A R",
         "R I B O S O M A S O S R B K",
         "T M A C I T O P L A S M A I",
         "S E B E U C A R I O T A K L",
-        "A A N I M A L N U C L E L O",
+        "A N I M A L N U C L E L O X",
         "P B L I S O S O M A S G P L",
         "U P R O C A R I O T A W J P",
         "C L O R O P L A S T O S D O",
@@ -336,7 +592,8 @@
         "O W U C A P S U L A N A N G",
         "V E G E T A L F L A G E L O",
       ];
-      const words = {
+
+      const wordsDefinitions = {
         CELULA: "Unidad básica de los seres vivos. Realiza funciones vitales.",
         "PARED CELULAR":
           "Capa rígida que protege y da forma a células vegetales.",
@@ -352,7 +609,7 @@
         CAPSULA: "Capa protectora en algunas bacterias.",
         VEGETAL: "Tipo de célula propia de plantas.",
         ANIMAL: "Tipo de célula de los animales.",
-        FLAGELO: "“Cola” que permite movimiento en algunas células.",
+        FLAGELO: '"Cola" que permite movimiento en algunas células.',
       };
 
       /*************** Elementos ***************/
@@ -361,45 +618,119 @@
       const info = document.getElementById("info");
       const hitsEl = document.getElementById("hits");
       const totalEl = document.getElementById("total");
-      const scoreEl = document.getElementById("score");
+      const scoreAEl = document.getElementById("scoreA");
+      const scoreBEl = document.getElementById("scoreB");
       const timeEl = document.getElementById("time");
-      const roundEl = document.getElementById("round");
-      const roundsTotalEl = document.getElementById("roundsTotal");
-      const resetBtn = document.getElementById("resetBtn");
-      const addTimeBtn = document.getElementById("addTime");
-      const muteBtn = document.getElementById("mute");
-      const finishRoundBtn = document.getElementById("finishRound");
-
+      const currentTurnEl = document.getElementById("currentTurn");
+      const turnIndicator = document.getElementById("turnIndicator");
+      const turnTeam = document.getElementById("turnTeam");
       const nameAInput = document.getElementById("nameA");
       const nameBInput = document.getElementById("nameB");
-      const roundsInput = document.getElementById("roundsInput");
+      const nameADisplay = document.getElementById("nameADisplay");
+      const nameBDisplay = document.getElementById("nameBDisplay");
+      const scoreCardA = document.getElementById("scoreCardA");
+      const scoreCardB = document.getElementById("scoreCardB");
       const minsInput = document.getElementById("minsInput");
       const applyCfgBtn = document.getElementById("applyCfg");
-      const rwA = document.getElementById("rwA");
-      const rwB = document.getElementById("rwB");
-      const lblA = document.getElementById("lblA");
-      const lblB = document.getElementById("lblB");
-      const btnAL = document.getElementById("btnA");
-      const btnBL = document.getElementById("btnB");
-      const btnGiveA = document.getElementById("giveA");
-      const btnGiveB = document.getElementById("giveB");
+      const addTimeBtn = document.getElementById("addTime");
+      const muteBtn = document.getElementById("mute");
+      const skipTurnBtn = document.getElementById("skipTurn");
+      const resetGameBtn = document.getElementById("resetGame");
       const leaderBody = document.querySelector("#leader tbody");
       const clearRankBtn = document.getElementById("clearRank");
 
-      /*************** Estado ***************/
-      let activeWord = null,
-        firstPick = null,
-        foundMap = new Map();
-      let score = 0,
-        hits = 0;
-      let totalSeconds = 180,
-        timerId = null,
-        muted = false;
+      // Elementos del modal
+      const startModal = document.getElementById("startModal");
+      const startNameAInput = document.getElementById("startNameA");
+      const startNameBInput = document.getElementById("startNameB");
+      const startMinsInput = document.getElementById("startMins");
+      const startWithABtn = document.getElementById("startWithA");
+      const startWithBBtn = document.getElementById("startWithB");
+      const summaryModal = document.getElementById("summaryModal");
+      const summaryTitle = document.getElementById("summaryTitle");
+      const summaryTeam = document.getElementById("summaryTeam");
+      const summaryWords = document.getElementById("summaryWords");
+      const summaryPoints = document.getElementById("summaryPoints");
+      const summaryOkBtn = document.getElementById("summaryOk");
+      const gameArea = document.getElementById("gameArea");
 
-      let round = 1,
-        roundsTotal = 3,
-        roundWinsA = 0,
-        roundWinsB = 0;
+      /*************** Estado del juego ***************/
+      let currentTeam = "A"; // "A" o "B"
+      let scoreA = 0,
+        scoreB = 0;
+      let activeWord = null;
+      let firstPick = null;
+      let foundMap = new Map();
+      let hits = 0;
+      let totalSeconds = 180;
+      let timerId = null;
+      let muted = false;
+      let gameStarted = false;
+
+      // Estado del tablero actual
+      let currentLetters = [];
+      let currentWords = [];
+      let cells = [];
+      let rows = 0,
+        cols = 0;
+
+      /*************** Funciones de aleatorización ***************/
+      function shuffleArray(array) {
+        const arr = [...array];
+        for (let i = arr.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+      }
+
+      function rotateGrid(letters) {
+        // 25% probabilidad de rotar 90°, 25% de rotar 180°, 25% de rotar 270°, 25% sin rotar
+        const rotationType = Math.floor(Math.random() * 4);
+
+        if (rotationType === 0) return letters; // Sin rotar
+
+        const grid = letters.map((row) => row.split(" "));
+        let rotated = grid;
+
+        for (let rotation = 0; rotation < rotationType; rotation++) {
+          const newGrid = [];
+          const numRows = rotated.length;
+          const numCols = rotated[0].length;
+
+          for (let j = numCols - 1; j >= 0; j--) {
+            const newRow = [];
+            for (let i = 0; i < numRows; i++) {
+              newRow.push(rotated[i][j]);
+            }
+            newGrid.push(newRow);
+          }
+          rotated = newGrid;
+        }
+
+        return rotated.map((row) => row.join(" "));
+      }
+
+      function flipGrid(letters) {
+        // 50% probabilidad de voltear horizontalmente
+        if (Math.random() < 0.5) {
+          return letters.map((row) => row.split(" ").reverse().join(" "));
+        }
+        return letters;
+      }
+
+      function randomizeBoard() {
+        // Copiar y transformar el tablero
+        let newLetters = [...baseLetters];
+        newLetters = rotateGrid(newLetters);
+        newLetters = flipGrid(newLetters);
+
+        // Mezclar el orden de las palabras
+        const wordKeys = Object.keys(wordsDefinitions);
+        const shuffledKeys = shuffleArray(wordKeys);
+
+        return { letters: newLetters, wordOrder: shuffledKeys };
+      }
 
       /*************** Sonidos ***************/
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -436,43 +767,50 @@
         const ss = String(s % 60).padStart(2, "0");
         return m + ":" + ss;
       }
+
       function startTimer() {
         if (timerId) clearInterval(timerId);
+        if (!gameStarted) return; // No iniciar el timer si el juego no ha comenzado
+
         timerId = setInterval(() => {
           if (totalSeconds > 0) {
             totalSeconds--;
             timeEl.textContent = fmt(totalSeconds);
           } else {
             clearInterval(timerId);
-            bloquear();
-            finRondaAuto("⏱ ¡Tiempo finalizado!");
+            endTurn("⏱ ¡Tiempo finalizado!");
           }
         }, 1000);
       }
 
       /*************** Construir grilla ***************/
-      const rows = letters.length,
+      function buildGrid(letters) {
+        grid.innerHTML = "";
+        cells = [];
+        rows = letters.length;
         cols = letters[0].split(" ").length;
-      const cells = [];
-      letters.forEach((row, i) => {
-        row.split(" ").forEach((ch, j) => {
-          const id = i * cols + j;
-          const div = document.createElement("div");
-          div.className = "cell";
-          div.textContent = ch;
-          div.dataset.id = id;
-          div.dataset.i = i;
-          div.dataset.j = j;
-          div.addEventListener("click", () => onCellClick(div));
-          grid.appendChild(div);
-          cells[id] = div;
+
+        letters.forEach((row, i) => {
+          row.split(" ").forEach((ch, j) => {
+            const id = i * cols + j;
+            const div = document.createElement("div");
+            div.className = "cell";
+            div.textContent = ch;
+            div.dataset.id = id;
+            div.dataset.i = i;
+            div.dataset.j = j;
+            div.addEventListener("click", () => onCellClick(div));
+            grid.appendChild(div);
+            cells[id] = div;
+          });
         });
-      });
+      }
 
       function getChar(i, j) {
         if (i < 0 || j < 0 || i >= rows || j >= cols) return null;
-        return letters[i].split(" ")[j];
+        return currentLetters[i].split(" ")[j];
       }
+
       function lineIndices(i1, j1, i2, j2) {
         const di = Math.sign(i2 - i1),
           dj = Math.sign(j2 - j1);
@@ -489,23 +827,26 @@
       }
 
       /*************** Palabras ***************/
-      const entries = Object.keys(words);
-      totalEl.textContent = entries.length;
-      entries.forEach((w) => {
-        const tag = document.createElement("button");
-        tag.className = "word";
-        tag.textContent = w;
-        tag.addEventListener("click", () => {
-          document
-            .querySelectorAll(".word")
-            .forEach((b) => b.classList.remove("active"));
-          tag.classList.add("active");
-          activeWord = w;
-          info.innerHTML = `<b>${w}:</b> ${words[w]}`;
-          firstPick = null;
+      function buildWordList(wordOrder) {
+        wordList.innerHTML = "";
+        totalEl.textContent = wordOrder.length;
+
+        wordOrder.forEach((w) => {
+          const tag = document.createElement("button");
+          tag.className = "word";
+          tag.textContent = w;
+          tag.addEventListener("click", () => {
+            document
+              .querySelectorAll(".word")
+              .forEach((b) => b.classList.remove("active"));
+            tag.classList.add("active");
+            activeWord = w;
+            info.innerHTML = `<b>${w}:</b> ${wordsDefinitions[w]}`;
+            firstPick = null;
+          });
+          wordList.appendChild(tag);
         });
-        wordList.appendChild(tag);
-      });
+      }
 
       /*************** Interacción ***************/
       function onCellClick(div) {
@@ -515,6 +856,7 @@
           return;
         }
         if (foundMap.has(activeWord)) return;
+
         div.classList.add("picked");
         if (!firstPick) {
           firstPick = div;
@@ -543,12 +885,21 @@
           foundMap.set(activeWord, idxs);
           hits++;
           hitsEl.textContent = hits;
-          score += 10;
-          scoreEl.textContent = score;
+
+          // Sumar puntos al equipo actual
+          const points = 10;
+          if (currentTeam === "A") {
+            scoreA += points;
+            scoreAEl.textContent = scoreA;
+          } else {
+            scoreB += points;
+            scoreBEl.textContent = scoreB;
+          }
+
           success();
-          if (hits === entries.length) {
-            bloquear();
-            finRondaAuto("🎉 ¡Todas las palabras encontradas!");
+
+          if (hits === currentWords.length) {
+            endTurn("🎉 ¡Todas las palabras encontradas!");
           }
         } else {
           firstPick.classList.remove("picked");
@@ -560,83 +911,161 @@
             div.classList.remove("badflash");
           }, 320);
           error();
-          score = Math.max(0, score - 2);
-          scoreEl.textContent = score;
+
+          // Restar puntos al equipo actual
+          if (currentTeam === "A") {
+            scoreA = Math.max(0, scoreA - 2);
+            scoreAEl.textContent = scoreA;
+          } else {
+            scoreB = Math.max(0, scoreB - 2);
+            scoreBEl.textContent = scoreB;
+          }
         }
         firstPick = null;
       }
-      function bloquear() {
-        document
-          .querySelectorAll(".cell")
-          .forEach((c) => (c.style.pointerEvents = "none"));
-      }
-      function desbloquear() {
-        document
-          .querySelectorAll(".cell")
-          .forEach((c) => (c.style.pointerEvents = "auto"));
+
+      /*************** Control de turnos ***************/
+      function updateTurnUI() {
+        const teamName =
+          currentTeam === "A"
+            ? nameAInput.value.trim() || "Equipo A"
+            : nameBInput.value.trim() || "Equipo B";
+
+        currentTurnEl.textContent = `🎯 Turno: ${teamName}`;
+        turnTeam.textContent = teamName;
+
+        turnIndicator.className = `team${currentTeam}`;
+        currentTurnEl.className = `badge turn team${currentTeam}`;
+
+        // Resaltar el marcador del equipo actual
+        if (currentTeam === "A") {
+          scoreCardA.classList.add("active");
+          scoreCardB.classList.remove("active");
+        } else {
+          scoreCardB.classList.add("active");
+          scoreCardA.classList.remove("active");
+        }
       }
 
-      /*************** Rondas ***************/
-      function finRondaAuto(msg) {
-        tada();
+      function switchTeam() {
+        currentTeam = currentTeam === "A" ? "B" : "A";
+        updateTurnUI();
+
+        // Pequeño delay para que el usuario vea el cambio de turno
+        setTimeout(() => {
+          resetTurn();
+        }, 500);
+      }
+
+      function endTurn(message) {
         clearInterval(timerId);
-        const aName = nameAInput.value.trim() || "Equipo A",
-          bName = nameBInput.value.trim() || "Equipo B";
-        // decidir ganador por puntos; si empatan, docente decide luego con botones +1
-        let ganador = "Empate";
-        if (score > 0) {
-          /* puntos son totales del tablero; se asignan manualmente por equipo con +1 */
-          // aquí solo informamos fin de ronda
-        }
-        alert(
-          (msg ? msg + "\n\n" : "") +
-            "Fin de la ronda " +
-            round +
-            ". Usa +1 para asignar al ganador o pulsa 'Siguiente ronda'."
-        );
+        tada();
 
-        // mostrar botón de siguiente ronda
-        mostrarBtnSiguiente();
+        const teamName =
+          currentTeam === "A"
+            ? nameAInput.value.trim() || "Equipo A"
+            : nameBInput.value.trim() || "Equipo B";
+
+        const currentScore = currentTeam === "A" ? scoreA : scoreB;
+
+        // Mostrar modal de resumen
+        summaryTitle.textContent = message;
+        summaryTeam.textContent = teamName;
+        summaryWords.textContent = `${hits}/${currentWords.length}`;
+        summaryPoints.textContent = currentScore;
+        summaryModal.classList.remove("hidden");
       }
-      function mostrarBtnSiguiente() {
-        if (document.getElementById("nextRound")) return;
-        const b = document.createElement("button");
-        b.id = "nextRound";
-        b.className = "btn";
-        b.textContent = "➡ Siguiente ronda";
-        b.onclick = () => {
-          document.getElementById("nextRound").remove();
-          siguienteRonda();
-        };
-        grid.parentElement.appendChild(b);
-      }
-      function siguienteRonda() {
-        round++;
-        if (round > roundsTotal) {
-          finPartida();
-          return;
-        }
-        roundEl.textContent = round;
-        // reiniciar tablero (solo estilos/estado)
+
+      function resetTurn() {
+        // Generar nuevo tablero aleatorio
+        const randomBoard = randomizeBoard();
+        currentLetters = randomBoard.letters;
+        currentWords = randomBoard.wordOrder;
+
+        // Reconstruir tablero y palabras
+        buildGrid(currentLetters);
+        buildWordList(currentWords);
+
+        // Resetear estado del turno
         foundMap.clear();
-        score = 0;
         hits = 0;
         hitsEl.textContent = 0;
-        scoreEl.textContent = 0;
         activeWord = null;
         firstPick = null;
-        document.querySelectorAll(".cell").forEach((c) => {
-          c.classList.remove("good", "picked");
-          c.style.pointerEvents = "auto";
-        });
-        document
-          .querySelectorAll(".word")
-          .forEach((w) => w.classList.remove("active", "done"));
         info.textContent = "Toca una palabra para ver su función.";
+
+        // Reiniciar temporizador
         totalSeconds = parseInt(minsInput.value || 3, 10) * 60;
         timeEl.textContent = fmt(totalSeconds);
         startTimer();
         beep();
+      }
+
+      function resetGame() {
+        const shouldSaveScore = scoreA > 0 || scoreB > 0;
+
+        if (shouldSaveScore) {
+          // Mostrar modal de confirmación personalizado
+          showConfirmModal(
+            "¿Reiniciar el juego?",
+            "Se perderán los puntos actuales. ¿Deseas continuar?",
+            () => {
+              // Si confirma, preguntar si quiere guardar
+              showConfirmModal(
+                "Guardar resultado",
+                "¿Deseas guardar el resultado actual en el ranking?",
+                () => {
+                  const teamAName = nameAInput.value.trim() || "Equipo A";
+                  const teamBName = nameBInput.value.trim() || "Equipo B";
+
+                  let winner = "Empate";
+                  if (scoreA > scoreB) winner = teamAName;
+                  else if (scoreB > scoreA) winner = teamBName;
+
+                  const scoreStr = `${teamAName} ${scoreA} - ${scoreB} ${teamBName}`;
+                  saveRank(winner, scoreStr);
+                  performReset();
+                },
+                () => {
+                  performReset();
+                }
+              );
+            }
+          );
+        } else {
+          performReset();
+        }
+      }
+
+      function performReset() {
+        gameStarted = false;
+        clearInterval(timerId);
+        scoreA = 0;
+        scoreB = 0;
+        scoreAEl.textContent = 0;
+        scoreBEl.textContent = 0;
+        gameArea.classList.remove("active");
+        startModal.classList.remove("hidden");
+      }
+
+      function endGame() {
+        clearInterval(timerId);
+
+        const teamAName = nameAInput.value.trim() || "Equipo A";
+        const teamBName = nameBInput.value.trim() || "Equipo B";
+
+        let winner = "Empate";
+        if (scoreA > scoreB) winner = teamAName;
+        else if (scoreB > scoreA) winner = teamBName;
+
+        const scoreStr = `${teamAName} ${scoreA} - ${scoreB} ${teamBName}`;
+        saveRank(winner, scoreStr);
+
+        alert(
+          `🏆 Juego finalizado\n\nGanador: ${winner}\nMarcador: ${scoreStr}`
+        );
+
+        resetGame();
       }
 
       /*************** Ranking (histórico en localStorage) ***************/
@@ -646,129 +1075,147 @@
         leaderBody.innerHTML = "";
         arr.slice(0, 20).forEach((r) => {
           const tr = document.createElement("tr");
-          tr.innerHTML = `<td>${r.date}</td><td>${r.winner}</td><td>${r.score}</td><td>${r.points}</td>`;
+          tr.innerHTML = `<td>${r.date}</td><td>${r.winner}</td><td>${r.score}</td>`;
           leaderBody.appendChild(tr);
         });
       }
-      function saveRank(winner, scoreStr, points) {
+
+      function saveRank(winner, scoreStr) {
         const arr = JSON.parse(localStorage.getItem(KEY) || "[]");
         arr.unshift({
           date: new Date().toLocaleString(),
           winner,
           score: scoreStr,
-          points,
         });
         localStorage.setItem(KEY, JSON.stringify(arr));
         loadRank();
       }
 
       /*************** Botones ***************/
-      resetBtn.onclick = () => {
-        foundMap.clear();
-        score = 0;
-        hits = 0;
-        hitsEl.textContent = 0;
-        scoreEl.textContent = 0;
-        activeWord = null;
-        firstPick = null;
-        document.querySelectorAll(".cell").forEach((c) => {
-          c.classList.remove("good", "picked");
-          c.style.pointerEvents = "auto";
-        });
-        document
-          .querySelectorAll(".word")
-          .forEach((w) => w.classList.remove("active", "done"));
-        info.textContent = "Toca una palabra para ver su función.";
+      applyCfgBtn.onclick = () => {
+        nameADisplay.textContent = nameAInput.value.trim() || "Equipo A";
+        nameBDisplay.textContent = nameBInput.value.trim() || "Equipo B";
+        updateTurnUI();
         totalSeconds = parseInt(minsInput.value || 3, 10) * 60;
         timeEl.textContent = fmt(totalSeconds);
-        startTimer();
         beep();
       };
+
       addTimeBtn.onclick = () => {
         totalSeconds += 30;
         timeEl.textContent = fmt(totalSeconds);
         beep(660, 0.1, "triangle");
       };
+
       muteBtn.onclick = (e) => {
         muted = !muted;
         e.target.textContent = muted ? "🔈 Sonido: OFF" : "🔊 Sonido: ON";
         if (!muted) beep();
       };
-      finishRoundBtn.onclick = () => {
-        clearInterval(timerId);
-        bloquear();
-        finRondaAuto("🏁 Ronda detenida por el docente");
-      };
 
-      applyCfgBtn.onclick = () => {
-        roundsTotal = Math.max(
-          1,
-          Math.min(10, parseInt(roundsInput.value || 3, 10))
+      skipTurnBtn.onclick = () => {
+        const teamName = currentTeam === "A"
+          ? (nameAInput.value.trim() || "Equipo A")
+          : (nameBInput.value.trim() || "Equipo B");
+
+        showConfirmModal(
+          "¿Cambiar de turno?",
+          `Se terminará el turno de ${teamName}.`,
+          () => {
+            endTurn("⏭ Turno cambiado manualmente");
+          }
         );
-        roundsTotalEl.textContent = roundsTotal;
-        lblA.textContent = btnAL.textContent = nameAInput.value || "A";
-        lblB.textContent = btnBL.textContent = nameBInput.value || "B";
-        totalSeconds = parseInt(minsInput.value || 3, 10) * 60;
-        timeEl.textContent = fmt(totalSeconds);
       };
 
-      btnGiveA.onclick = () => {
-        roundWinsA++;
-        rwA.textContent = roundWinsA;
-        checkFinPartida();
-      };
-      btnGiveB.onclick = () => {
-        roundWinsB++;
-        rwB.textContent = roundWinsB;
-        checkFinPartida();
+      resetGameBtn.onclick = resetGame;
+
+      clearRankBtn.onclick = () => {
+        showConfirmModal(
+          "¿Borrar ranking?",
+          "Se eliminará todo el historial de partidas.",
+          () => {
+            localStorage.removeItem(KEY);
+            loadRank();
+          }
+        );
       };
 
-      function checkFinPartida() {
-        const need = Math.ceil(roundsTotal / 2); // al mejor de N
-        if (roundWinsA >= need || roundWinsB >= need || round > roundsTotal) {
-          finPartida();
-        } else {
-          mostrarBtnSiguiente();
-        }
+      /*************** Modal de confirmación personalizado ***************/
+      function showConfirmModal(title, message, onConfirm, onCancel) {
+        const overlay = document.createElement("div");
+        overlay.className = "modal-overlay";
+        overlay.innerHTML = `
+          <div class="modal">
+            <h2>${title}</h2>
+            <div class="modal-content">
+              <div class="modal-section">
+                <p style="margin: 0; color: #64748b; font-size: 16px; text-align: center;">
+                  ${message}
+                </p>
+              </div>
+            </div>
+            <div class="modal-buttons">
+              <button class="btn danger" id="confirmNo">Cancelar</button>
+              <button class="btn" id="confirmYes">Aceptar</button>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(overlay);
+
+        document.getElementById("confirmYes").onclick = () => {
+          document.body.removeChild(overlay);
+          if (onConfirm) onConfirm();
+        };
+
+        document.getElementById("confirmNo").onclick = () => {
+          document.body.removeChild(overlay);
+          if (onCancel) onCancel();
+        };
       }
 
-      function finPartida() {
-        clearInterval(timerId);
-        const teamA = nameAInput.value.trim() || "Equipo A",
-          teamB = nameBInput.value.trim() || "Equipo B";
-        let winner = "Empate";
-        if (roundWinsA > roundWinsB) winner = teamA;
-        else if (roundWinsB > roundWinsA) winner = teamB;
-        const scoreStr = `${teamA} ${roundWinsA} - ${roundWinsB} ${teamB}`;
-        const points = score; // puntos acumulados de la última ronda (referencia)
-        saveRank(winner, scoreStr, points);
-        alert(
-          `🏆 Partida finalizada\nGanador: ${winner}\nMarcador: ${scoreStr}\nPuntos (referencia ronda): ${points}`
-        );
-        // preparar nueva sesión
-        round = 1;
-        roundEl.textContent = round;
-        roundWinsA = 0;
-        roundWinsB = 0;
-        rwA.textContent = 0;
-        rwB.textContent = 0;
-        resetBtn.click();
+      /*************** Inicio del juego ***************/
+      startWithABtn.onclick = () => startGame("A");
+      startWithBBtn.onclick = () => startGame("B");
+
+      function startGame(team) {
+        // Aplicar configuración
+        const teamAName = startNameAInput.value.trim() || "Equipo A";
+        const teamBName = startNameBInput.value.trim() || "Equipo B";
+        const minutes = parseInt(startMinsInput.value || 3, 10);
+
+        nameAInput.value = teamAName;
+        nameBInput.value = teamBName;
+        nameADisplay.textContent = teamAName;
+        nameBDisplay.textContent = teamBName;
+        minsInput.value = minutes;
+
+        currentTeam = team;
+        gameStarted = true;
+
+        // Ocultar modal y mostrar juego
+        startModal.classList.add("hidden");
+        gameArea.classList.add("active");
+
+        updateTurnUI();
+        resetTurn();
       }
+
+      summaryOkBtn.onclick = () => {
+        summaryModal.classList.add("hidden");
+        switchTeam();
+      };
 
       /*************** Inicio ***************/
-      roundsTotalEl.textContent = roundsTotal;
-      lblA.textContent = btnAL.textContent = nameAInput.value;
-      lblB.textContent = btnBL.textContent = nameBInput.value;
-      totalSeconds = parseInt(minsInput.value || 3, 10) * 60;
-      timeEl.textContent = fmt(totalSeconds);
-      startTimer();
       loadRank();
+
+      // No iniciar el juego automáticamente
+      // El juego se iniciará cuando el usuario presione un botón en el modal
 
       // Mostrar definición al pasar el mouse
       wordList.addEventListener("mouseover", (e) => {
         if (e.target.classList.contains("word"))
           info.innerHTML = `<b>${e.target.textContent}:</b> ${
-            words[e.target.textContent]
+            wordsDefinitions[e.target.textContent]
           }`;
       });
     </script>
