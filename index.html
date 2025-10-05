@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sopa de letras: La célula — Rondas + Ranking</title>
+    <style>
+      :root {
+        --ok: #22c55e;
+        --bad: #ef4444;
+        --main: #0b8043;
+        --pill: #16a34a;
+        --ink: #134e4a;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: system-ui, Segoe UI, Arial;
+        margin: 0;
+        background: linear-gradient(#d9fbe2, #f4fff6);
+      }
+      header {
+        padding: 12px 16px;
+        background: #e7ffe9;
+        border-bottom: 2px solid #c6f6ce;
+      }
+      h1 {
+        margin: 0;
+        color: var(--main);
+        font-size: clamp(18px, 3.4vw, 28px);
+      }
+      .wrap {
+        max-width: 1140px;
+        margin: auto;
+        padding: 10px 16px;
+      }
+      .topbar {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .stats {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      .badge {
+        background: #fff;
+        border: 1px solid #d1fae5;
+        border-radius: 10px;
+        padding: 6px 10px;
+        font-weight: 700;
+        color: var(--ink);
+      }
+      .btn {
+        cursor: pointer;
+        border: 0;
+        border-radius: 10px;
+        padding: 8px 12px;
+        background: var(--pill);
+        color: #fff;
+        font-weight: 700;
+      }
+      .btn.secondary {
+        background: #0ea5e9;
+      }
+      .btn.warn {
+        background: #f59e0b;
+      }
+      .btn.danger {
+        background: #ef4444;
+      }
+      .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+      .game {
+        display: grid;
+        grid-template-columns: 1fr 360px;
+        gap: 18px;
+        margin-top: 12px;
+      }
+      @media (max-width: 900px) {
+        .game {
+          grid-template-columns: 1fr;
+        }
+      }
+      #grid {
+        display: grid;
+        grid-template-columns: repeat(13, 44px);
+        justify-content: center;
+        gap: 4px;
+        padding: 10px;
+        background: #f8fff9;
+        border: 2px solid #d9fbe2;
+        border-radius: 14px;
+      }
+      .cell {
+        width: 44px;
+        height: 44px;
+        background: #fff;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        user-select: none;
+        transition: transform 0.06s;
+      }
+      .cell:hover {
+        transform: scale(1.05);
+      }
+      .picked {
+        outline: 2px solid #60a5fa;
+      }
+      .good {
+        background: #c8f7c5 !important;
+        color: #064e3b !important;
+        border-color: #86efac;
+      }
+      .badflash {
+        animation: bad 0.35s;
+      }
+      @keyframes bad {
+        0%,
+        100% {
+          background: #fff;
+        }
+        50% {
+          background: #ffe4e6;
+        }
+      }
+      .side {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .panel {
+        background: #ffffff;
+        border: 2px solid #dcfce7;
+        border-radius: 14px;
+        padding: 14px;
+      }
+      .title {
+        margin: 0 0 8px;
+        color: var(--main);
+      }
+      #words {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .word {
+        background: #bbf7d0;
+        color: #065f46;
+        padding: 8px 10px;
+        border-radius: 999px;
+        font-weight: 800;
+        cursor: pointer;
+        border: 2px solid #86efac;
+      }
+      .word.active {
+        background: #34d399;
+        color: #052e25;
+        border-color: #10b981;
+      }
+      .word.done {
+        background: #a7f3d0;
+        text-decoration: line-through;
+        opacity: 0.7;
+        cursor: default;
+      }
+      .row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      input[type="text"],
+      input[type="number"] {
+        padding: 8px 10px;
+        border-radius: 8px;
+        border: 1px solid #cbd5e1;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        padding: 6px 8px;
+        border-bottom: 1px solid #e5e7eb;
+        text-align: left;
+        font-size: 14px;
+      }
+      .tiny {
+        font-size: 12px;
+        color: #334155;
+      }
+      footer {
+        padding: 10px 16px 22px;
+        text-align: center;
+        color: #475569;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="wrap topbar">
+        <h1>🔬 La célula — Sopa interactiva (Rondas + Ranking)</h1>
+        <div class="stats">
+          <div class="badge">
+            🧩 Ronda: <span id="round">1</span>/<span id="roundsTotal">3</span>
+          </div>
+          <div class="badge">⏱ Tiempo: <span id="time">03:00</span></div>
+          <div class="badge">
+            🎯 Aciertos: <span id="hits">0</span>/<span id="total">0</span>
+          </div>
+          <div class="badge">⭐ Puntos: <span id="score">0</span></div>
+          <button id="resetBtn" class="btn warn">Reiniciar ronda</button>
+        </div>
+      </div>
+    </header>
+
+    <div class="wrap game">
+      <!-- GRID -->
+      <div>
+        <div id="grid" aria-label="Sopa de letras"></div>
+        <div class="panel">
+          <div class="row">
+            <button id="addTime" class="btn secondary">+30s</button>
+            <button id="mute" class="btn">🔊 Sonido: ON</button>
+            <button id="finishRound" class="btn">🏁 Terminar Ronda</button>
+          </div>
+          <p class="tiny">
+            Tip: Selecciona <b>primera y última letra</b> en línea recta.
+          </p>
+        </div>
+      </div>
+
+      <!-- LATERAL -->
+      <aside class="side">
+        <div class="panel">
+          <h3 class="title">👥 Equipos & Configuración</h3>
+          <div class="row">
+            <label
+              >Equipo A: <input id="nameA" type="text" value="Equipo A"
+            /></label>
+            <label
+              >Equipo B: <input id="nameB" type="text" value="Equipo B"
+            /></label>
+          </div>
+          <div class="row" style="margin-top: 6px">
+            <label
+              >Rondas:
+              <input id="roundsInput" type="number" min="1" max="10" value="3"
+            /></label>
+            <label
+              >Minutos por ronda:
+              <input id="minsInput" type="number" min="1" max="15" value="3"
+            /></label>
+            <button id="applyCfg" class="btn secondary">Aplicar</button>
+          </div>
+          <div class="row" style="margin-top: 10px">
+            <div class="badge">
+              🏆 Rondas ganadas — <b id="lblA">A</b>: <span id="rwA">0</span>
+            </div>
+            <div class="badge">
+              🏆 <b id="lblB">B</b>: <span id="rwB">0</span>
+            </div>
+          </div>
+          <div class="row" style="margin-top: 8px">
+            <button id="giveA" class="btn secondary">
+              +1 a <span id="btnA">A</span>
+            </button>
+            <button id="giveB" class="btn secondary">
+              +1 a <span id="btnB">B</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3 class="title">👀 Palabras</h3>
+          <div id="words"></div>
+        </div>
+
+        <div class="panel">
+          <h3 class="title">ℹ Definición</h3>
+          <div id="info">Toca una palabra para ver su función.</div>
+        </div>
+
+        <div class="panel">
+          <h3 class="title">📊 Ranking de clases (histórico)</h3>
+          <table id="leader">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Ganador</th>
+                <th>Marcador</th>
+                <th>Puntos</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+          <div class="row">
+            <button id="clearRank" class="btn danger">Borrar ranking</button>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <footer>
+      © Recurso educativo — 6.º grado. Hecho para pizarras interactivas.
+    </footer>
+
+    <script>
+      /*************** Datos del tablero ***************/
+      const letters = [
+        "T G S D C E L U L A V M G X",
+        "A O P A R E D C E L U L A R",
+        "R I B O S O M A S O S R B K",
+        "T M A C I T O P L A S M A I",
+        "S E B E U C A R I O T A K L",
+        "A A N I M A L N U C L E L O",
+        "P B L I S O S O M A S G P L",
+        "U P R O C A R I O T A W J P",
+        "C L O R O P L A S T O S D O",
+        "L C D V V A C U O L A S K P",
+        "P D R F L I S O S O M A S U",
+        "G V M I T O C O N D R I A S",
+        "O W U C A P S U L A N A N G",
+        "V E G E T A L F L A G E L O",
+      ];
+      const words = {
+        CELULA: "Unidad básica de los seres vivos. Realiza funciones vitales.",
+        "PARED CELULAR":
+          "Capa rígida que protege y da forma a células vegetales.",
+        RIBOSOMAS: "Fabrican proteínas para la célula.",
+        CITOPLASMA: "Medio gelatinoso donde están los orgánulos.",
+        EUCARIOTA: "Célula con núcleo definido (animales y plantas).",
+        PROCARIONTA: "Célula sin núcleo (bacterias).",
+        NUCLEO: "Dirige la célula y guarda el ADN.",
+        CLOROPLASTOS: "Hacen fotosíntesis en plantas.",
+        VACUOLAS: "Almacenan agua y nutrientes.",
+        LISOSOMAS: "Reciclan desechos celulares.",
+        MITOCONDRIAS: "Producen energía (ATP).",
+        CAPSULA: "Capa protectora en algunas bacterias.",
+        VEGETAL: "Tipo de célula propia de plantas.",
+        ANIMAL: "Tipo de célula de los animales.",
+        FLAGELO: "“Cola” que permite movimiento en algunas células.",
+      };
+
+      /*************** Elementos ***************/
+      const grid = document.getElementById("grid");
+      const wordList = document.getElementById("words");
+      const info = document.getElementById("info");
+      const hitsEl = document.getElementById("hits");
+      const totalEl = document.getElementById("total");
+      const scoreEl = document.getElementById("score");
+      const timeEl = document.getElementById("time");
+      const roundEl = document.getElementById("round");
+      const roundsTotalEl = document.getElementById("roundsTotal");
+      const resetBtn = document.getElementById("resetBtn");
+      const addTimeBtn = document.getElementById("addTime");
+      const muteBtn = document.getElementById("mute");
+      const finishRoundBtn = document.getElementById("finishRound");
+
+      const nameAInput = document.getElementById("nameA");
+      const nameBInput = document.getElementById("nameB");
+      const roundsInput = document.getElementById("roundsInput");
+      const minsInput = document.getElementById("minsInput");
+      const applyCfgBtn = document.getElementById("applyCfg");
+      const rwA = document.getElementById("rwA");
+      const rwB = document.getElementById("rwB");
+      const lblA = document.getElementById("lblA");
+      const lblB = document.getElementById("lblB");
+      const btnAL = document.getElementById("btnA");
+      const btnBL = document.getElementById("btnB");
+      const btnGiveA = document.getElementById("giveA");
+      const btnGiveB = document.getElementById("giveB");
+      const leaderBody = document.querySelector("#leader tbody");
+      const clearRankBtn = document.getElementById("clearRank");
+
+      /*************** Estado ***************/
+      let activeWord = null,
+        firstPick = null,
+        foundMap = new Map();
+      let score = 0,
+        hits = 0;
+      let totalSeconds = 180,
+        timerId = null,
+        muted = false;
+
+      let round = 1,
+        roundsTotal = 3,
+        roundWinsA = 0,
+        roundWinsB = 0;
+
+      /*************** Sonidos ***************/
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      const ctx = new AudioCtx();
+      function beep(freq = 880, len = 0.12, type = "sine", vol = 0.15) {
+        if (muted) return;
+        const o = ctx.createOscillator(),
+          g = ctx.createGain();
+        o.type = type;
+        o.frequency.value = freq;
+        g.gain.value = vol;
+        o.connect(g);
+        g.connect(ctx.destination);
+        o.start();
+        g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + len);
+        o.stop(ctx.currentTime + len);
+      }
+      function success() {
+        beep(880, 0.09, "triangle");
+        setTimeout(() => beep(1175, 0.09, "triangle"), 90);
+      }
+      function error() {
+        beep(180, 0.18, "square", 0.2);
+      }
+      function tada() {
+        beep(740, 0.12, "sine");
+        setTimeout(() => beep(988, 0.18, "sine"), 120);
+        setTimeout(() => beep(1319, 0.22, "sine"), 320);
+      }
+
+      /*************** Temporizador ***************/
+      function fmt(s) {
+        const m = String(Math.floor(s / 60)).padStart(2, "0");
+        const ss = String(s % 60).padStart(2, "0");
+        return m + ":" + ss;
+      }
+      function startTimer() {
+        if (timerId) clearInterval(timerId);
+        timerId = setInterval(() => {
+          if (totalSeconds > 0) {
+            totalSeconds--;
+            timeEl.textContent = fmt(totalSeconds);
+          } else {
+            clearInterval(timerId);
+            bloquear();
+            finRondaAuto("⏱ ¡Tiempo finalizado!");
+          }
+        }, 1000);
+      }
+
+      /*************** Construir grilla ***************/
+      const rows = letters.length,
+        cols = letters[0].split(" ").length;
+      const cells = [];
+      letters.forEach((row, i) => {
+        row.split(" ").forEach((ch, j) => {
+          const id = i * cols + j;
+          const div = document.createElement("div");
+          div.className = "cell";
+          div.textContent = ch;
+          div.dataset.id = id;
+          div.dataset.i = i;
+          div.dataset.j = j;
+          div.addEventListener("click", () => onCellClick(div));
+          grid.appendChild(div);
+          cells[id] = div;
+        });
+      });
+
+      function getChar(i, j) {
+        if (i < 0 || j < 0 || i >= rows || j >= cols) return null;
+        return letters[i].split(" ")[j];
+      }
+      function lineIndices(i1, j1, i2, j2) {
+        const di = Math.sign(i2 - i1),
+          dj = Math.sign(j2 - j1);
+        const len = Math.max(Math.abs(i2 - i1), Math.abs(j2 - j1)) + 1;
+        if (
+          (di === 0 && dj === 0) ||
+          (di !== 0 && dj !== 0 && Math.abs(i2 - i1) !== Math.abs(j2 - j1))
+        )
+          return [];
+        const out = [];
+        for (let k = 0; k < len; k++)
+          out.push((i1 + di * k) * cols + (j1 + dj * k));
+        return out;
+      }
+
+      /*************** Palabras ***************/
+      const entries = Object.keys(words);
+      totalEl.textContent = entries.length;
+      entries.forEach((w) => {
+        const tag = document.createElement("button");
+        tag.className = "word";
+        tag.textContent = w;
+        tag.addEventListener("click", () => {
+          document
+            .querySelectorAll(".word")
+            .forEach((b) => b.classList.remove("active"));
+          tag.classList.add("active");
+          activeWord = w;
+          info.innerHTML = `<b>${w}:</b> ${words[w]}`;
+          firstPick = null;
+        });
+        wordList.appendChild(tag);
+      });
+
+      /*************** Interacción ***************/
+      function onCellClick(div) {
+        if (!activeWord) {
+          info.textContent = "Selecciona una palabra primero 👆";
+          error();
+          return;
+        }
+        if (foundMap.has(activeWord)) return;
+        div.classList.add("picked");
+        if (!firstPick) {
+          firstPick = div;
+          beep(520, 0.06, "sine");
+          return;
+        }
+
+        const i1 = +firstPick.dataset.i,
+          j1 = +firstPick.dataset.j,
+          i2 = +div.dataset.i,
+          j2 = +div.dataset.j;
+        const idxs = lineIndices(i1, j1, i2, j2),
+          picked = idxs.map((id) => cells[id].textContent).join("");
+        const clean = activeWord.replace(/\s+/g, "");
+        const ok =
+          picked === clean || picked.split("").reverse().join("") === clean;
+
+        if (ok) {
+          idxs.forEach((id) => cells[id].classList.add("good"));
+          document.querySelectorAll(".word").forEach((b) => {
+            if (b.textContent === activeWord) {
+              b.classList.remove("active");
+              b.classList.add("done");
+            }
+          });
+          foundMap.set(activeWord, idxs);
+          hits++;
+          hitsEl.textContent = hits;
+          score += 10;
+          scoreEl.textContent = score;
+          success();
+          if (hits === entries.length) {
+            bloquear();
+            finRondaAuto("🎉 ¡Todas las palabras encontradas!");
+          }
+        } else {
+          firstPick.classList.remove("picked");
+          div.classList.remove("picked");
+          firstPick.classList.add("badflash");
+          div.classList.add("badflash");
+          setTimeout(() => {
+            firstPick.classList.remove("badflash");
+            div.classList.remove("badflash");
+          }, 320);
+          error();
+          score = Math.max(0, score - 2);
+          scoreEl.textContent = score;
+        }
+        firstPick = null;
+      }
+      function bloquear() {
+        document
+          .querySelectorAll(".cell")
+          .forEach((c) => (c.style.pointerEvents = "none"));
+      }
+      function desbloquear() {
+        document
+          .querySelectorAll(".cell")
+          .forEach((c) => (c.style.pointerEvents = "auto"));
+      }
+
+      /*************** Rondas ***************/
+      function finRondaAuto(msg) {
+        tada();
+        clearInterval(timerId);
+        const aName = nameAInput.value.trim() || "Equipo A",
+          bName = nameBInput.value.trim() || "Equipo B";
+        // decidir ganador por puntos; si empatan, docente decide luego con botones +1
+        let ganador = "Empate";
+        if (score > 0) {
+          /* puntos son totales del tablero; se asignan manualmente por equipo con +1 */
+          // aquí solo informamos fin de ronda
+        }
+        alert(
+          (msg ? msg + "\n\n" : "") +
+            "Fin de la ronda " +
+            round +
+            ". Usa +1 para asignar al ganador o pulsa 'Siguiente ronda'."
+        );
+
+        // mostrar botón de siguiente ronda
+        mostrarBtnSiguiente();
+      }
+      function mostrarBtnSiguiente() {
+        if (document.getElementById("nextRound")) return;
+        const b = document.createElement("button");
+        b.id = "nextRound";
+        b.className = "btn";
+        b.textContent = "➡ Siguiente ronda";
+        b.onclick = () => {
+          document.getElementById("nextRound").remove();
+          siguienteRonda();
+        };
+        grid.parentElement.appendChild(b);
+      }
+      function siguienteRonda() {
+        round++;
+        if (round > roundsTotal) {
+          finPartida();
+          return;
+        }
+        roundEl.textContent = round;
+        // reiniciar tablero (solo estilos/estado)
+        foundMap.clear();
+        score = 0;
+        hits = 0;
+        hitsEl.textContent = 0;
+        scoreEl.textContent = 0;
+        activeWord = null;
+        firstPick = null;
+        document.querySelectorAll(".cell").forEach((c) => {
+          c.classList.remove("good", "picked");
+          c.style.pointerEvents = "auto";
+        });
+        document
+          .querySelectorAll(".word")
+          .forEach((w) => w.classList.remove("active", "done"));
+        info.textContent = "Toca una palabra para ver su función.";
+        totalSeconds = parseInt(minsInput.value || 3, 10) * 60;
+        timeEl.textContent = fmt(totalSeconds);
+        startTimer();
+        beep();
+      }
+
+      /*************** Ranking (histórico en localStorage) ***************/
+      const KEY = "celulaLeaderboard";
+      function loadRank() {
+        const arr = JSON.parse(localStorage.getItem(KEY) || "[]");
+        leaderBody.innerHTML = "";
+        arr.slice(0, 20).forEach((r) => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `<td>${r.date}</td><td>${r.winner}</td><td>${r.score}</td><td>${r.points}</td>`;
+          leaderBody.appendChild(tr);
+        });
+      }
+      function saveRank(winner, scoreStr, points) {
+        const arr = JSON.parse(localStorage.getItem(KEY) || "[]");
+        arr.unshift({
+          date: new Date().toLocaleString(),
+          winner,
+          score: scoreStr,
+          points,
+        });
+        localStorage.setItem(KEY, JSON.stringify(arr));
+        loadRank();
+      }
+
+      /*************** Botones ***************/
+      resetBtn.onclick = () => {
+        foundMap.clear();
+        score = 0;
+        hits = 0;
+        hitsEl.textContent = 0;
+        scoreEl.textContent = 0;
+        activeWord = null;
+        firstPick = null;
+        document.querySelectorAll(".cell").forEach((c) => {
+          c.classList.remove("good", "picked");
+          c.style.pointerEvents = "auto";
+        });
+        document
+          .querySelectorAll(".word")
+          .forEach((w) => w.classList.remove("active", "done"));
+        info.textContent = "Toca una palabra para ver su función.";
+        totalSeconds = parseInt(minsInput.value || 3, 10) * 60;
+        timeEl.textContent = fmt(totalSeconds);
+        startTimer();
+        beep();
+      };
+      addTimeBtn.onclick = () => {
+        totalSeconds += 30;
+        timeEl.textContent = fmt(totalSeconds);
+        beep(660, 0.1, "triangle");
+      };
+      muteBtn.onclick = (e) => {
+        muted = !muted;
+        e.target.textContent = muted ? "🔈 Sonido: OFF" : "🔊 Sonido: ON";
+        if (!muted) beep();
+      };
+      finishRoundBtn.onclick = () => {
+        clearInterval(timerId);
+        bloquear();
+        finRondaAuto("🏁 Ronda detenida por el docente");
+      };
+
+      applyCfgBtn.onclick = () => {
+        roundsTotal = Math.max(
+          1,
+          Math.min(10, parseInt(roundsInput.value || 3, 10))
+        );
+        roundsTotalEl.textContent = roundsTotal;
+        lblA.textContent = btnAL.textContent = nameAInput.value || "A";
+        lblB.textContent = btnBL.textContent = nameBInput.value || "B";
+        totalSeconds = parseInt(minsInput.value || 3, 10) * 60;
+        timeEl.textContent = fmt(totalSeconds);
+      };
+
+      btnGiveA.onclick = () => {
+        roundWinsA++;
+        rwA.textContent = roundWinsA;
+        checkFinPartida();
+      };
+      btnGiveB.onclick = () => {
+        roundWinsB++;
+        rwB.textContent = roundWinsB;
+        checkFinPartida();
+      };
+
+      function checkFinPartida() {
+        const need = Math.ceil(roundsTotal / 2); // al mejor de N
+        if (roundWinsA >= need || roundWinsB >= need || round > roundsTotal) {
+          finPartida();
+        } else {
+          mostrarBtnSiguiente();
+        }
+      }
+
+      function finPartida() {
+        clearInterval(timerId);
+        const teamA = nameAInput.value.trim() || "Equipo A",
+          teamB = nameBInput.value.trim() || "Equipo B";
+        let winner = "Empate";
+        if (roundWinsA > roundWinsB) winner = teamA;
+        else if (roundWinsB > roundWinsA) winner = teamB;
+        const scoreStr = `${teamA} ${roundWinsA} - ${roundWinsB} ${teamB}`;
+        const points = score; // puntos acumulados de la última ronda (referencia)
+        saveRank(winner, scoreStr, points);
+        alert(
+          `🏆 Partida finalizada\nGanador: ${winner}\nMarcador: ${scoreStr}\nPuntos (referencia ronda): ${points}`
+        );
+        // preparar nueva sesión
+        round = 1;
+        roundEl.textContent = round;
+        roundWinsA = 0;
+        roundWinsB = 0;
+        rwA.textContent = 0;
+        rwB.textContent = 0;
+        resetBtn.click();
+      }
+
+      /*************** Inicio ***************/
+      roundsTotalEl.textContent = roundsTotal;
+      lblA.textContent = btnAL.textContent = nameAInput.value;
+      lblB.textContent = btnBL.textContent = nameBInput.value;
+      totalSeconds = parseInt(minsInput.value || 3, 10) * 60;
+      timeEl.textContent = fmt(totalSeconds);
+      startTimer();
+      loadRank();
+
+      // Mostrar definición al pasar el mouse
+      wordList.addEventListener("mouseover", (e) => {
+        if (e.target.classList.contains("word"))
+          info.innerHTML = `<b>${e.target.textContent}:</b> ${
+            words[e.target.textContent]
+          }`;
+      });
+    </script>
+  </body>
+</html>
